@@ -4,9 +4,13 @@ import java.lang.reflect.Field;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
 import android.media.Ringtone;
@@ -33,6 +37,9 @@ public class NHelper {
 	WindowManager mWindowManager;
 	DisplayMetrics mDisplayMetrics;
 	Object popWinLock = new Object();
+	private int mNotifacationIDIndex = 1000;
+
+	boolean getStatusing = false;
 
 	/**
 	 * 单例类，
@@ -156,7 +163,7 @@ public class NHelper {
 				| WindowManager.LayoutParams.FLAG_FULLSCREEN
 				| WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
 
-		wmParams.width = (int) (mDisplayMetrics.density * 300);
+		wmParams.width = (int) (mDisplayMetrics.widthPixels / 4 * mDisplayMetrics.density);
 		wmParams.height = statusBarHeight;
 
 		if (isTablet(context)) {
@@ -164,7 +171,7 @@ public class NHelper {
 			wmParams.y = -statusBarHeight;
 			wmParams.x = (mDisplayMetrics.widthPixels - wmParams.width) / 2;
 		} else {
-			wmParams.gravity = Gravity.TOP | Gravity.LEFT;
+			wmParams.gravity = Gravity.TOP | Gravity.RIGHT;
 			wmParams.x = 0;
 			wmParams.y = 0;
 		}
@@ -198,5 +205,44 @@ public class NHelper {
 		Vibrator vib = (Vibrator) context
 				.getSystemService(Service.VIBRATOR_SERVICE);
 		vib.vibrate(200);
+	}
+
+	public int showNotification(Context context, int iconID, String title,
+			String message, Intent intent, int notificationID, boolean ring,
+			boolean vibrat, boolean onGoing) {
+		if (notificationID == 0) {
+			notificationID = mNotifacationIDIndex++;
+		}
+
+		if (intent != null) {
+
+			// 传递ID参数
+			intent.putExtra("notificationID", notificationID);
+		}
+		NotificationManager nm = (NotificationManager) context
+				.getSystemService(Context.NOTIFICATION_SERVICE);
+		Notification notification = new Notification(iconID, title,
+				System.currentTimeMillis());
+		if (onGoing) {
+			notification.flags |= Notification.FLAG_ONGOING_EVENT;
+		} else {
+			notification.flags &= ~Notification.FLAG_ONGOING_EVENT;
+		}
+		if (ring) {
+			notification.defaults |= Notification.DEFAULT_SOUND;
+		} else {
+			notification.defaults &= ~Notification.DEFAULT_SOUND;
+		}
+		if (vibrat) {
+			notification.defaults |= Notification.DEFAULT_VIBRATE;
+		} else {
+			notification.defaults &= ~Notification.DEFAULT_VIBRATE;
+		}
+		PendingIntent contentIntent = PendingIntent.getActivity(context,
+				R.string.app_name, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		notification.setLatestEventInfo(context, title, message, contentIntent);
+		nm.notify(notificationID, notification);
+
+		return notificationID;
 	}
 }

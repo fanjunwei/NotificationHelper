@@ -2,17 +2,55 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal"
+    android:orientation="vertical"
     android:paddingBottom="@dimen/activity_vertical_margin"
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context=".MainActivity" >
 
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <CheckBox
+            android:id="@+id/cbxRing"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="铃声" />
+
+        <CheckBox
+            android:id="@+id/cbxVibrat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="震动" />
+    </LinearLayout>
+
     <Button
         android:id="@+id/btnSendStatus"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="状态栏显示状态信息" />
+
+    <Button
+        android:id="@+id/btnSendNotification"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="通知消息" />
+
+    <Button
+        android:id="@+id/btnOnGoing"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="显示正在运行" />
+
+    <Button
+        android:id="@+id/btnCheckcurr"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="是否为当前程序(注意log信息NHelper)" />
 
 </LinearLayout>
