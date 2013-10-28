@@ -52,9 +52,11 @@ public class MainActivity extends Activity {
 				Intent intent = new Intent(MainActivity.this,
 						MessageActivity.class);
 				// 注意，相同的目标activity要使用相同ID
+				
 				notifactionID = NHelper.getNHelper().showNotification(
 						MainActivity.this, R.drawable.ic_launcher, "新消息",
 						"消息消息消息", intent, notifactionID, ring, vibrat, false);
+				//消息清除注意看MessageActivity的代码。
 			}
 		});
 
