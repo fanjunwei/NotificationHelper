@@ -3,8 +3,12 @@ package com.fjw.notificationhelper;
 import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
+import android.view.View;
+import android.widget.Button;
 
 public class MainActivity extends Activity {
+
+	Button btnStatus;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -12,8 +16,16 @@ public class MainActivity extends Activity {
 		setContentView(R.layout.activity_main);
 
 		NHelper.getNHelper().init(this);
-		NHelper.getNHelper().sendStatusBarNotification(this,
-				NHelper.NotifactionAlign.RIGHT, "sdfasdfadsfsdfasdfsadfasdfafsdsdsadfasdfasdfasdfasdfdsf");
+		btnStatus = (Button) findViewById(R.id.btnSendStatus);
+		btnStatus.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				NHelper.getNHelper().showStatus(MainActivity.this, "登录成功",
+						true, true);
+			}
+		});
+
 	}
 
 	@Override

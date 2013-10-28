@@ -4,13 +4,17 @@ import java.lang.reflect.Field;
 
 import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.PixelFormat;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Handler;
+import android.os.Vibrator;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,20 +23,14 @@ import android.widget.TextView;
 
 public class NHelper {
 	private static NHelper instance;
-	private static Handler mHandler;
-	private final int STATUS_BAR_LOCATION_NONE = 0;
-	private final int STATUS_BAR_LOCATION_TOP = 1;
-	private final int STATUS_BAR_LOCATION_BOTTOM = 2;
+	private static Handler mHandler = new Handler();
+
 	private boolean inited = false;
-	private int statusBarLocation = STATUS_BAR_LOCATION_NONE;
+
 	private int statusBarHeight;
 	private View notiView;
 	WindowManager mWindowManager;
 	DisplayMetrics mDisplayMetrics;
-
-	public enum NotifactionAlign {
-		LEFT, CENTER, RIGHT
-	}
 
 	/**
 	 * 单例类，
@@ -49,22 +47,18 @@ public class NHelper {
 	}
 
 	/**
-	 * 初始化,使用此类需要先调用此函数
+	 * 初始化,请在主activity的onCreate中调用此方法
 	 * 
 	 * @param activity
 	 */
 	public void init(Activity activity) {
-		statusBarHeight = getStatusBarHeight(activity);
-		mDisplayMetrics = new DisplayMetrics();
-		mWindowManager = (WindowManager) activity.getSystemService("window");
-		mWindowManager.getDefaultDisplay().getMetrics(mDisplayMetrics);
+
 		if (!inited) {
-			// 平板模式statusbar在下方，手机模式statusbar在上方
-			if (isTablet(activity)) {
-				statusBarLocation = STATUS_BAR_LOCATION_BOTTOM;
-			} else {
-				statusBarLocation = STATUS_BAR_LOCATION_TOP;
-			}
+			statusBarHeight = getStatusBarHeight(activity);
+			mDisplayMetrics = new DisplayMetrics();
+			mWindowManager = (WindowManager) activity
+					.getSystemService("window");
+			mWindowManager.getDefaultDisplay().getMetrics(mDisplayMetrics);
 			inited = true;
 		}
 	}
@@ -123,76 +117,81 @@ public class NHelper {
 		}
 	}
 
-	public void sendStatusBarNotification(Context context,
-			NotifactionAlign align, String message) {
+	/**
+	 * 显示状态信息，不能点击
+	 * 
+	 * @param context
+	 * @param message
+	 */
+	public void showStatus(Context context, String message, boolean ring,
+			boolean vibrat) {
 		LayoutInflater inflater = LayoutInflater.from(context);
 		if (notiView == null) {
 			notiView = inflater.inflate(R.layout.notification, null);
 		}
-		notiView.setOnClickListener(new View.OnClickListener() {
 
-			@Override
-			public void onClick(View arg0) {
-				Log.d("tttt", "click");
-
-			}
-		});
-
-		// 平板模式，左侧为功能键位置
-		if (isTablet(context) && align == NotifactionAlign.LEFT) {
-			align = NotifactionAlign.RIGHT;
-		}
 		TextView txtView = (TextView) notiView.findViewById(R.id.title);
 		txtView.setText(message);
 
 		WindowManager.LayoutParams wmParams = new WindowManager.LayoutParams();
 
 		wmParams.format = PixelFormat.RGBA_8888;
-		wmParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
+		wmParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY;
 		wmParams.flags = WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
 				| WindowManager.LayoutParams.FLAG_FULLSCREEN
 				| WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
 
 		wmParams.width = (int) (mDisplayMetrics.density * 300);
-		wmParams.height = statusBarHeight + 10;
+		wmParams.height = statusBarHeight;
 
-		if (statusBarLocation == STATUS_BAR_LOCATION_BOTTOM) {
-			wmParams.gravity = Gravity.BOTTOM;
+		if (isTablet(context)) {
+			wmParams.gravity = Gravity.BOTTOM | Gravity.LEFT;
 			wmParams.y = -statusBarHeight;
+			wmParams.x = (mDisplayMetrics.widthPixels - wmParams.width) / 2;
 		} else {
-			wmParams.gravity = Gravity.TOP;
+			wmParams.gravity = Gravity.TOP | Gravity.LEFT;
+			wmParams.x = 0;
 			wmParams.y = 0;
 		}
-
-		switch (align) {
-		case LEFT:
-			wmParams.gravity |= Gravity.LEFT;
-			wmParams.x = 0;
-			break;
-		case CENTER:
-			wmParams.gravity |= Gravity.LEFT;
-			wmParams.x = (mDisplayMetrics.widthPixels - wmParams.width) / 2;
-			break;
-		case RIGHT:
-			wmParams.gravity |= Gravity.RIGHT;
-			wmParams.x = 0;
-			break;
-		}
 		mWindowManager.addView(notiView, wmParams);
+		if (ring)
+			playRing(context);
+		if (vibrat)
+			vibrat(context);
 		new Thread() {
 
 			@Override
 			public void run() {
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(3000);
 				} catch (InterruptedException e) {
 				}
 				if (notiView != null) {
-					// mWindowManager.removeView(notiView);
+					mHandler.post(new Runnable() {
+
+						@Override
+						public void run() {
+							mWindowManager.removeView(notiView);
+
+						}
+					});
+
 				}
 			}
 
 		}.start();
 	}
 
+	private void playRing(Context context) {
+		Uri notification = RingtoneManager
+				.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+		Ringtone r = RingtoneManager.getRingtone(context, notification);
+		r.play();
+	}
+
+	private void vibrat(Context context) {
+		Vibrator vib = (Vibrator) context
+				.getSystemService(Service.VIBRATOR_SERVICE);
+		vib.vibrate(200);
+	}
 }
