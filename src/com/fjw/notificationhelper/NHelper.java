@@ -29,8 +29,10 @@ public class NHelper {
 
 	private int statusBarHeight;
 	private View notiView;
+	private boolean showStatused = false;
 	WindowManager mWindowManager;
 	DisplayMetrics mDisplayMetrics;
+	Object popWinLock = new Object();
 
 	/**
 	 * 单例类，
@@ -117,6 +119,19 @@ public class NHelper {
 		}
 	}
 
+	Runnable removePopWindow = new Runnable() {
+
+		@Override
+		public void run() {
+			synchronized (popWinLock) {
+				if (showStatused) {
+					mWindowManager.removeView(notiView);
+					showStatused = false;
+				}
+			}
+		}
+	};
+
 	/**
 	 * 显示状态信息，不能点击
 	 * 
@@ -153,40 +168,30 @@ public class NHelper {
 			wmParams.x = 0;
 			wmParams.y = 0;
 		}
-		mWindowManager.addView(notiView, wmParams);
+		synchronized (popWinLock) {
+			if (!showStatused) {
+				mWindowManager.addView(notiView, wmParams);
+				showStatused = true;
+			}
+		}
+
 		if (ring)
 			playRing(context);
 		if (vibrat)
 			vibrat(context);
-		new Thread() {
+		mHandler.removeCallbacks(removePopWindow);
+		mHandler.postDelayed(removePopWindow, 3000);
 
-			@Override
-			public void run() {
-				try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-				}
-				if (notiView != null) {
-					mHandler.post(new Runnable() {
-
-						@Override
-						public void run() {
-							mWindowManager.removeView(notiView);
-
-						}
-					});
-
-				}
-			}
-
-		}.start();
 	}
 
 	private void playRing(Context context) {
-		Uri notification = RingtoneManager
-				.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-		Ringtone r = RingtoneManager.getRingtone(context, notification);
-		r.play();
+		try {
+			Uri notification = RingtoneManager
+					.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+			Ringtone r = RingtoneManager.getRingtone(context, notification);
+			r.play();
+		} catch (Throwable ex) {
+		}
 	}
 
 	private void vibrat(Context context) {

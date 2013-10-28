@@ -22,7 +22,7 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				NHelper.getNHelper().showStatus(MainActivity.this, "登录成功",
-						true, true);
+						false, false);
 			}
 		});
 
